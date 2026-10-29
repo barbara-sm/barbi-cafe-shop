@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Barbi Café Shop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F6EBE6;--surface:#fff;--ink:#2B1810;--muted:#7A6258;--blue:#4A2C1F;--blue-d:#33201A;--crema:#D81B7A;--line:#E6D3CA;--ok:#1F7A4D;--err:#B3261E;
+--display:'Bricolage Grotesque',system-ui,sans-serif;--body:'Instrument Sans',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--crema);outline-offset:2px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+
+/* Cabeçalho */
+.top{position:sticky;top:0;z-index:20;background:var(--blue);color:#fff}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{font:800 1.25rem var(--display);letter-spacing:-.02em;color:#fff;text-decoration:none}
+.cart-btn{display:flex;align-items:center;gap:10px;background:var(--crema);color:#fff;border:0;border-radius:999px;padding:8px 16px;font-weight:600}
+.cart-btn b{background:var(--ink);color:#fff;border-radius:999px;min-width:24px;height:24px;display:grid;place-items:center;font-size:.8rem;padding:0 6px}
+
+/* Hero: grade de azulejo */
+.hero{background:var(--blue);color:#fff;background-image:linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px);background-size:56px 56px;padding:64px 0 72px}
+.hero h1{font:800 clamp(2.4rem,7vw,4.6rem)/1 var(--display);letter-spacing:-.035em;max-width:13ch}
+.hero p{margin:18px 0 28px;max-width:44ch;font-size:1.1rem;color:#F4D9E5}
+.btn{display:inline-block;border:0;border-radius:10px;padding:12px 22px;font-weight:600;text-decoration:none;background:var(--crema);color:#fff}
+.btn:hover{filter:brightness(.95)}
+.btn.blue{background:var(--blue);color:#fff}
+.btn.blue:hover{background:var(--blue-d);filter:none}
+.btn.ghost{background:transparent;border:1.5px solid var(--line)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn.full{width:100%;text-align:center}
+
+/* Cardápio */
+.menu{padding:48px 0 80px}
+.menu h2{font:800 2rem var(--display);letter-spacing:-.02em}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 28px}
+.tab{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 16px;font-weight:500}
+.tab[aria-pressed=true]{background:var(--crema);border-color:var(--crema);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
+.item{background:var(--surface);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.item .pic{position:relative;height:170px;display:grid;place-items:center;font-size:3rem;background:#F4DED5}
+.item .pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.item .body{padding:16px;display:flex;flex-direction:column;gap:6px;flex:1}
+.item h3{font:700 1.1rem var(--display)}
+.item p{color:var(--muted);font-size:.92rem;flex:1}
+.item .row{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.price{font-weight:600}
+.add{border:0;background:var(--crema);color:#fff;border-radius:8px;padding:8px 14px;font-weight:600}
+.add:hover{filter:brightness(.9)}
+.empty,.state{color:var(--muted);padding:32px 0}
+
+footer{background:var(--ink);color:#CFC8C3;padding:28px 0;font-size:.9rem}
+
+/* Gaveta (carrinho / checkout / confirmação) */
+.overlay{position:fixed;inset:0;background:rgba(20,14,10,.5);opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
+.overlay.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--surface);z-index:40;transform:translateX(100%);transition:transform .25s;display:flex;flex-direction:column}
+.drawer.open{transform:none}
+.dh{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+.dh h2{font:800 1.3rem var(--display)}
+.x{border:0;background:none;font-size:1.6rem;line-height:1;padding:4px 8px}
+.db{flex:1;overflow:auto;padding:20px}
+.df{padding:16px 20px;border-top:1px solid var(--line);display:grid;gap:10px}
+.line{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.line .nm{flex:1}
+.line small{color:var(--muted)}
+.qty{display:flex;align-items:center;gap:4px}
+.qty button{width:30px;height:30px;border:1.5px solid var(--line);background:none;border-radius:8px;font-weight:600}
+.qty span{min-width:22px;text-align:center}
+.tot{display:flex;justify-content:space-between}
+.tot.big{font:800 1.2rem var(--display)}
+label{display:grid;gap:4px;font-weight:500;font-size:.92rem;margin-bottom:14px}
+input[type=text],input[type=tel],select,textarea{border:1.5px solid var(--line);border-radius:8px;padding:10px 12px;background:#fff;width:100%}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.seg label{margin:0;border:1.5px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:row;align-items:center;gap:8px;cursor:pointer}
+.seg label:has(input:checked){border-color:var(--blue);background:#FCE6F0}
+.err{color:var(--err);font-size:.85rem;font-weight:400}
+.alert{background:#FBE9E7;color:var(--err);padding:10px 12px;border-radius:8px;margin-bottom:14px;font-size:.92rem}
+.done{text-align:center;padding:40px 0}
+.done .ok{width:64px;height:64px;border-radius:50%;background:var(--ok);color:#fff;display:grid;place-items:center;font-size:2rem;margin:0 auto 16px}
+.done h3{font:800 1.5rem var(--display);margin-bottom:8px}
+.link{background:none;border:0;color:var(--muted);text-decoration:underline;padding:0;font-size:.85rem}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+.logo{display:flex;align-items:center;gap:8px}
+.ic{width:28px;height:28px;flex:none}
+.hero .wrap{position:relative}
+.hero-ic{position:absolute;right:20px;top:-8px;width:min(240px,30vw);height:auto;color:var(--crema)}
+@media(max-width:700px){.hero-ic{display:none}}
+.btn.line2{background:transparent;border:1.5px solid #F4D9E5;color:#fff;margin-left:10px}
+.about{background:var(--blue);color:#F6EBE6;padding:64px 0}
+.about .wrap{display:grid;grid-template-columns:1fr 2fr;gap:32px}
+.about h2{font:800 2rem var(--display);letter-spacing:-.02em;color:#fff}
+.about h2::after{content:"";display:block;width:56px;height:5px;border-radius:3px;background:var(--crema);margin-top:12px}
+.about p{font-size:1.08rem;max-width:62ch;margin-bottom:14px}
+@media(max-width:700px){.about .wrap{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="cup" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 26h34v12a14 14 0 0 1-14 14h-6A14 14 0 0 1 10 38z" fill="currentColor" fill-opacity=".18"/><path d="M44 30h4a6 6 0 0 1 0 12h-5"/><path d="M20 8c-3 3 3 5 0 9M28 8c-3 3 3 5 0 9M36 8c-3 3 3 5 0 9"/><path d="M6 56h44"/></symbol></svg>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#"><svg class="ic" aria-hidden="true"><use href="#cup"/></svg>Barbi Café Shop</a>
+    <button class="cart-btn" id="openCart" aria-label="Abrir carrinho">Carrinho <b id="badge" aria-live="polite">0</b></button>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <svg class="hero-ic" aria-hidden="true"><use href="#cup"/></svg>
+    <h1>Café quentinho, dia mais doce.</h1>
+    <p>Monte seu pedido, escolha retirar no balcão ou receber em casa e pague como preferir.</p>
+    <a class="btn" href="#cardapio">Ver cardápio</a><a class="btn line2" href="#sobre">Sobre nós</a>
+  </div>
+</section>
+
+<section class="about" id="sobre">
+  <div class="wrap">
+    <h2>Sobre nós</h2>
+    <div>
+      <p>A Barbi Café Shop nasceu de um sonho simples: ter um cantinho onde o café tem cheiro de casa e toda pausa vira um pequeno carinho.</p>
+      <p>Escolhemos grãos de pequenos produtores, torramos com calma e passamos cada xícara na hora, porque acreditamos que café bom não tem pressa. Na vitrine, sobremesas feitas todos os dias, com manteiga de verdade, chocolate de qualidade e um toque de ousadia rosa.</p>
+      <p>Aqui ninguém é só cliente, é visita. Venha para um café rápido antes do trabalho, para uma conversa que dura a tarde toda ou para levar um pedacinho de afeto para casa.</p>
+    </div>
+  </div>
+</section>
+
+<main class="menu" id="cardapio">
+  <div class="wrap">
+    <h2>Cardápio</h2>
+    <div class="tabs" id="tabs" role="group" aria-label="Categorias"></div>
+    <div id="grid" class="grid"></div>
+  </div>
+</main>
+
+<footer><div class="wrap">Barbi Café Shop · Rua das Flores, 120 · Aberto todos os dias, 7h às 19h</div></footer>
+
+<div class="overlay" id="overlay"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dtitle" aria-hidden="true"></aside>
+
+<script>
+/* CAMADA DE API: o backend (server.js) serve esta página e a API no mesmo domínio. */
+const API_BASE = '/api';
+async function request(path, options){
+  const r = await fetch(API_BASE + path, options);
+  const data = await r.json().catch(() => ({}));
+  if(!r.ok) throw new Error(data.error || 'Não foi possível concluir a ação. Tente novamente.');
+  return data;
+}
+const api = {
+  getMenu: () => request('/menu'),
+  createOrder: order => request('/orders', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(order)})
+};
+
+/* =====================================================================
+   ESTADO E UTILITÁRIOS
+   ===================================================================== */
+const DELIVERY_FEE = 1000; // centavos — exibição apenas; o backend deve ser a fonte da verdade
+const $ = s => document.querySelector(s);
+const brl = c => (c / 100).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+let menu = [], category = 'Todos', view = 'cart', busy = false, submitError = '', errors = {}, lastOrder = null;
+let cart = loadCart();
+let form = {name:'', phone:'', mode:'retirada', address:'', payment:'pix', notes:''};
+
+function loadCart(){ try { return JSON.parse(localStorage.getItem('barbi_cart')) || {}; } catch { return {}; } }
+function saveCart(){ try { localStorage.setItem('barbi_cart', JSON.stringify(cart)); } catch {} }
+const cartCount = () => Object.values(cart).reduce((a, b) => a + b, 0);
+const find = id => menu.find(p => p.id === id);
+const subtotal = () => Object.entries(cart).reduce((s, [id, q]) => s + (find(id) ? find(id).price * q : 0), 0);
+const fee = () => form.mode === 'entrega' ? DELIVERY_FEE : 0;
+
+/* =====================================================================
+   CARDÁPIO
+   ===================================================================== */
+function renderMenu(){
+  const cats = ['Todos', ...new Set(menu.map(p => p.category))];
+  $('#tabs').innerHTML = cats.map(c => `<button class="tab" data-cat="${esc(c)}" aria-pressed="${c === category}">${esc(c)}</button>`).join('');
+  const list = menu.filter(p => category === 'Todos' || p.category === category);
+  $('#grid').innerHTML = list.map(p => `
+    <article class="item">
+      <div class="pic">${esc(p.emoji || '☕')}${p.image ? `<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" onerror="this.remove()">` : ''}</div>
+      <div class="body">
+        <h3>${esc(p.name)}</h3>
+        <p>${esc(p.description)}</p>
+        <div class="row"><span class="price">${brl(p.price)}</span>
+        <button class="add" data-add="${esc(p.id)}" aria-label="Adicionar ${esc(p.name)} ao carrinho">Adicionar</button></div>
+      </div>
+    </article>`).join('') || '<p class="empty">Nenhum item nesta categoria.</p>';
+}
+
+$('#tabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-cat]'); if(!b) return;
+  category = b.dataset.cat; renderMenu();
+});
+$('#grid').addEventListener('click', e => {
+  const b = e.target.closest('[data-add]'); if(!b) return;
+  change(b.dataset.add, 1);
+});
+
+/* =====================================================================
+   CARRINHO
+   ===================================================================== */
+function change(id, delta){
+  const q = (cart[id] || 0) + delta;
+  if(q <= 0) delete cart[id]; else cart[id] = q;
+  saveCart(); updateBadge();
+  if($('#drawer').classList.contains('open')) renderDrawer();
+}
+function updateBadge(){ $('#badge').textContent = cartCount(); }
+
+/* =====================================================================
+   GAVETA: carrinho -> dados do pedido -> confirmação
+   ===================================================================== */
+function openDrawer(v){
+  view = v || (cartCount() ? 'cart' : 'cart');
+  renderDrawer();
+  $('#drawer').classList.add('open'); $('#overlay').classList.add('open');
+  $('#drawer').setAttribute('aria-hidden', 'false');
+  $('#drawer .x').focus();
+}
+function closeDrawer(){
+  $('#drawer').classList.remove('open'); $('#overlay').classList.remove('open');
+  $('#drawer').setAttribute('aria-hidden', 'true');
+  $('#openCart').focus();
+}
+
+function head(title){ return `<div class="dh"><h2 id="dtitle">${title}</h2><button class="x" data-act="close" aria-label="Fechar">×</button></div>`; }
+
+function cartView(){
+  const ids = Object.keys(cart).filter(find);
+  if(!ids.length) return head('Seu carrinho') + `<div class="db"><p class="state">Seu carrinho está vazio. Escolha algo no cardápio para começar.</p></div>
+    <div class="df"><button class="btn blue full" data-act="close">Ver cardápio</button></div>`;
+  return head('Seu carrinho') + `<div class="db">${ids.map(id => { const p = find(id); return `
+    <div class="line">
+      <div class="nm"><div>${esc(p.name)}</div><small>${brl(p.price)} cada</small></div>
+      <div class="qty"><button data-dec="${esc(id)}" aria-label="Diminuir ${esc(p.name)}">−</button><span>${cart[id]}</span><button data-inc="${esc(id)}" aria-label="Aumentar ${esc(p.name)}">+</button></div>
+      <div class="price">${brl(p.price * cart[id])}</div>
+    </div>`; }).join('')}
+    <button class="link" data-act="clear" style="margin-top:14px">Esvaziar carrinho</button></div>
+    <div class="df"><div class="tot big"><span>Subtotal</span><span>${brl(subtotal())}</span></div>
+    <button class="btn blue full" data-act="checkout">Continuar para o pedido</button></div>`;
+}
+
+function checkoutView(){
+  const f = form, e = errors, total = subtotal() + fee();
+  return head('Finalizar pedido') + `<form id="checkout" class="db" novalidate>
+    ${submitError ? `<div class="alert" role="alert">${esc(submitError)}</div>` : ''}
+    <label>Nome<input type="text" name="name" value="${esc(f.name)}" autocomplete="name">${e.name ? `<span class="err">${e.name}</span>` : ''}</label>
+    <label>Telefone com DDD<input type="tel" name="phone" value="${esc(f.phone)}" autocomplete="tel" placeholder="(11) 90000-0000">${e.phone ? `<span class="err">${e.phone}</span>` : ''}</label>
+    <div class="seg" role="radiogroup" aria-label="Como receber">
+      <label><input type="radio" name="mode" value="retirada" ${f.mode === 'retirada' ? 'checked' : ''}> Retirar no balcão</label>
+      <label><input type="radio" name="mode" value="entrega" ${f.mode === 'entrega' ? 'checked' : ''}> Entrega (+ ${brl(DELIVERY_FEE)})</label>
+    </div>
+    ${f.mode === 'entrega' ? `<label>Endereço de entrega<input type="text" name="address" value="${esc(f.address)}" autocomplete="street-address">${e.address ? `<span class="err">${e.address}</span>` : ''}</label>` : ''}
+    <label>Pagamento
+      <select name="payment">
+        <option value="pix" ${f.payment === 'pix' ? 'selected' : ''}>Pix</option>
+        <option value="cartao" ${f.payment === 'cartao' ? 'selected' : ''}>Cartão (na retirada ou entrega)</option>
+        <option value="dinheiro" ${f.payment === 'dinheiro' ? 'selected' : ''}>Dinheiro</option>
+      </select></label>
+    <label>Observações (opcional)<textarea name="notes" rows="2">${esc(f.notes)}</textarea></label>
+    <div class="tot"><span>Subtotal</span><span>${brl(subtotal())}</span></div>
+    ${fee() ? `<div class="tot"><span>Entrega</span><span>${brl(fee())}</span></div>` : ''}
+    <div class="tot big" style="margin-top:6px"><span>Total</span><span>${brl(total)}</span></div>
+  </form>
+  <div class="df">
+    <button class="btn blue full" data-act="submit" ${busy ? 'disabled' : ''}>${busy ? 'Enviando…' : `Confirmar pedido · ${brl(total)}`}</button>
+    <button class="btn ghost full" data-act="back" ${busy ? 'disabled' : ''}>Voltar ao carrinho</button>
+  </div>`;
+}
+
+function doneView(){
+  const o = lastOrder;
+  return head('Pedido enviado') + `<div class="db"><div class="done">
+    <div class="ok" aria-hidden="true">✓</div>
+    <h3>Pedido nº ${esc(o.id)} recebido</h3>
+    <p>${o.mode === 'entrega' ? 'Avisaremos pelo telefone quando sair para entrega.' : 'Avisaremos pelo telefone quando estiver pronto no balcão.'}</p>
+  </div></div><div class="df"><button class="btn blue full" data-act="close">Voltar ao cardápio</button></div>`;
+}
+
+function renderDrawer(){
+  $('#drawer').innerHTML = view === 'checkout' ? checkoutView() : view === 'done' ? doneView() : cartView();
+}
+
+function validate(){
+  errors = {};
+  if(form.name.trim().length < 2) errors.name = 'Informe seu nome.';
+  if(form.phone.replace(/\D/g, '').length < 10) errors.phone = 'Informe um telefone com DDD.';
+  if(form.mode === 'entrega' && form.address.trim().length < 5) errors.address = 'Informe o endereço completo.';
+  return !Object.keys(errors).length;
+}
+
+async function submitOrder(){
+  if(busy) return;
+  if(!validate()){ submitError = ''; renderDrawer(); return; }
+  busy = true; submitError = ''; renderDrawer();
+  try{
+    const res = await api.createOrder({
+      customer:{name:form.name.trim(), phone:form.phone.trim()},
+      mode:form.mode, address:form.mode === 'entrega' ? form.address.trim() : null,
+      payment:form.payment, notes:form.notes.trim(),
+      items:Object.entries(cart).map(([id, quantity]) => ({id, quantity}))
+    });
+    lastOrder = {id:res.id, mode:form.mode};
+    cart = {}; saveCart(); updateBadge(); view = 'done';
+  }catch(err){
+    submitError = err.message || 'Não foi possível enviar o pedido. Tente novamente.';
+  }
+  busy = false; renderDrawer();
+}
+
+$('#drawer').addEventListener('click', e => {
+  const t = e.target.closest('button'); if(!t) return;
+  if(t.dataset.inc) return change(t.dataset.inc, 1);
+  if(t.dataset.dec) return change(t.dataset.dec, -1);
+  const act = t.dataset.act;
+  if(act === 'close') closeDrawer();
+  else if(act === 'clear'){ cart = {}; saveCart(); updateBadge(); renderDrawer(); }
+  else if(act === 'checkout'){ view = 'checkout'; errors = {}; renderDrawer(); }
+  else if(act === 'back'){ view = 'cart'; renderDrawer(); }
+  else if(act === 'submit') submitOrder();
+});
+$('#drawer').addEventListener('input', e => {
+  const n = e.target.name; if(!n || !(n in form)) return;
+  form[n] = e.target.value;
+  if(n === 'mode') renderDrawer();
+});
+$('#checkout') && 0;
+document.addEventListener('submit', e => { e.preventDefault(); submitOrder(); });
+$('#openCart').addEventListener('click', () => openDrawer('cart'));
+$('#overlay').addEventListener('click', closeDrawer);
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && $('#drawer').classList.contains('open')) closeDrawer(); });
+
+/* =====================================================================
+   INICIALIZAÇÃO
+   ===================================================================== */
+(async function init(){
+  $('#grid').innerHTML = '<p class="state">Carregando cardápio…</p>';
+  try{
+    menu = await api.getMenu();
+    cart = Object.fromEntries(Object.entries(cart).filter(([id]) => find(id))); // remove itens que saíram do cardápio
+    saveCart(); renderMenu(); updateBadge();
+  }catch{
+    $('#grid').innerHTML = '<p class="state">Não foi possível carregar o cardápio. Recarregue a página.</p>';
+  }
+})();
+</script>
+</body>
+</html>

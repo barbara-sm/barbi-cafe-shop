@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel · Barbi Café Shop</title>
+<style>
+:root{--bg:#F6EBE6;--ink:#2B1810;--muted:#7A6258;--brown:#4A2C1F;--pink:#D81B7A;--line:#E6D3CA;--ok:#1F7A4D}
+*{box-sizing:border-box;margin:0}
+body{font:15px/1.45 system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--pink);outline-offset:2px}
+header{background:var(--brown);color:#fff;padding:12px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+header h1{font-size:1.1rem;flex:1}
+.tab{background:none;border:0;color:#F4D9E5;padding:6px 14px;border-radius:999px}
+.tab[aria-pressed=true]{background:var(--pink);color:#fff}
+main{padding:20px;max-width:1200px;margin:0 auto}
+.btn{border:0;border-radius:8px;padding:8px 14px;background:var(--brown);color:#fff;font-weight:600}
+.btn.pink{background:var(--pink)}
+.btn.out{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+.muted{color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;align-items:start}
+.col h2{font-size:1rem;margin-bottom:10px}
+.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;display:grid;gap:6px}
+.card .top{display:flex;justify-content:space-between;font-weight:700}
+.card ul{padding-left:18px}
+.acts{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap}
+.tag{font-size:.8rem;background:#FCE6F0;color:var(--pink);border-radius:999px;padding:1px 8px;font-weight:600}
+.split{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+@media(max-width:860px){.split{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{font-size:.85rem;color:var(--muted)}
+tr.off td{opacity:.5}
+form.panel,.login{background:#fff;border-radius:12px;padding:16px;display:grid;gap:10px}
+label{display:grid;gap:3px;font-weight:600;font-size:.88rem}
+input,select,textarea{border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;font-weight:400}
+label.chk{display:flex;gap:8px;align-items:center}
+label.chk input{width:auto}
+.login{max-width:360px;margin:12vh auto}
+.err{color:#B3261E;font-size:.9rem}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const brl = c => (c / 100).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+const NEXT = {novo:['preparando','Iniciar preparo'], preparando:['pronto','Marcar como pronto'], pronto:['entregue','Concluir pedido']};
+const COLS = [['novo','Novos'], ['preparando','Em preparo'], ['pronto','Prontos'], ['fim','Finalizados (48 h)']];
+const PAY = {pix:'Pix', cartao:'Cartão', dinheiro:'Dinheiro'};
+
+let token = sessionStorage.getItem('barbi_admin') || '', tab = 'pedidos', orders = [], products = [], editing = null, loginErr = '', timer;
+
+async function call(path, opt = {}){
+  const r = await fetch('/api/admin' + path, {...opt, headers:{'Content-Type':'application/json', Authorization:'Bearer ' + token}});
+  const d = await r.json().catch(() => ({}));
+  if(r.status === 401){ logout(); throw new Error('Senha incorreta.'); }
+  if(!r.ok) throw new Error(d.error || 'Erro inesperado.');
+  return d;
+}
+function logout(){ token = ''; sessionStorage.removeItem('barbi_admin'); clearInterval(timer); loginErr = ''; render(); }
+
+async function load(){
+  try{
+    if(tab === 'pedidos'){ orders = await call('/orders'); const n = orders.filter(o => o.status === 'novo').length; document.title = (n ? `(${n}) ` : '') + 'Painel · Barbi Café Shop'; }
+    else products = await call('/products');
+    render();
+  }catch(e){ if(token) alert(e.message); }
+}
+
+function render(){
+  if(!token) return $('#app').innerHTML = `<form class="login" id="login"><h1>Painel Barbi Café Shop</h1>
+    <label>Senha de acesso<input type="password" id="pw" autocomplete="current-password" required></label>
+    ${loginErr ? `<span class="err">${esc(loginErr)}</span>` : ''}<button class="btn pink">Entrar</button></form>`;
+  $('#app').innerHTML = `<header><h1>Barbi Café Shop · Painel</h1>
+    <button class="tab" data-tab="pedidos" aria-pressed="${tab === 'pedidos'}">Pedidos</button>
+    <button class="tab" data-tab="produtos" aria-pressed="${tab === 'produtos'}">Produtos</button>
+    <button class="tab" data-act="out">Sair</button></header>
+    <main>${tab === 'pedidos' ? ordersView() : productsView()}</main>`;
+}
+
+function card(o){
+  const t = new Date(o.created_at).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  const nx = NEXT[o.status];
+  return `<article class="card">
+    <div class="top"><span>#${o.id} · ${esc(o.customer_name)}</span><span>${t}</span></div>
+    <div><span class="tag">${o.mode === 'entrega' ? 'Entrega' : 'Retirada'}</span> <span class="tag">${PAY[o.payment]}</span>
+      ${o.status === 'cancelado' ? '<span class="tag">Cancelado</span>' : o.status === 'entregue' ? '<span class="tag">Concluído</span>' : ''}</div>
+    <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>
+    ${o.address ? `<div>${esc(o.address)}</div>` : ''}
+    <ul>${o.items.map(i => `<li>${i.quantity}× ${esc(i.name)}</li>`).join('')}</ul>
+    ${o.notes ? `<div class="muted">Obs.: ${esc(o.notes)}</div>` : ''}
+    <div class="top"><span>Total</span><span>${brl(o.total)}</span></div>
+    ${nx ? `<div class="acts"><button class="btn pink" data-st="${o.id}:${nx[0]}">${nx[1]}</button>
+      <button class="btn out" data-st="${o.id}:cancelado">Cancelar</button></div>` : ''}</article>`;
+}
+function ordersView(){
+  return `<div class="cols">${COLS.map(([k, t]) => {
+    const list = orders.filter(o => k === 'fim' ? ['entregue','cancelado'].includes(o.status) : o.status === k);
+    return `<section class="col"><h2>${t} (${list.length})</h2>${list.map(card).join('') || '<p class="muted">Nenhum pedido.</p>'}</section>`;
+  }).join('')}</div>`;
+}
+
+function productsView(){
+  const p = products.find(x => x.id === editing) || {category:'', name:'', description:'', price:0, emoji:'☕', image_url:'', active:true, sort:products.length + 1};
+  const cats = [...new Set(products.map(x => x.category))];
+  return `<div class="split"><table><thead><tr><th>Produto</th><th>Categoria</th><th>Preço</th><th></th></tr></thead><tbody>
+    ${products.map(x => `<tr class="${x.active ? '' : 'off'}"><td>${esc(x.emoji)} ${esc(x.name)}${x.active ? '' : ' (oculto)'}</td><td>${esc(x.category)}</td><td>${brl(x.price)}</td>
+      <td><button class="btn out" data-edit="${x.id}">Editar</button></td></tr>`).join('')}</tbody></table>
+    <form class="panel" id="pform"><h2>${editing ? 'Editar produto' : 'Novo produto'}</h2>
+      <label>Categoria<input name="category" list="cats" value="${esc(p.category)}" required></label><datalist id="cats">${cats.map(c => `<option value="${esc(c)}">`).join('')}</datalist>
+      <label>Nome<input name="name" value="${esc(p.name)}" required></label>
+      <label>Descrição<textarea name="description" rows="2">${esc(p.description)}</textarea></label>
+      <label>Preço (R$)<input name="price" inputmode="decimal" value="${(p.price / 100).toFixed(2).replace('.', ',')}" required></label>
+      <label>Emoji (aparece sem foto)<input name="emoji" value="${esc(p.emoji)}"></label>
+      <label>Foto (URL ou caminho, ex.: img/espresso.jpg)<input name="image_url" value="${esc(p.image_url)}"></label>
+      <label>Ordem no cardápio<input name="sort" type="number" value="${p.sort}"></label>
+      <label class="chk"><input type="checkbox" name="active" ${p.active ? 'checked' : ''}> Visível no cardápio</label>
+      <button class="btn pink">Salvar</button>
+      ${editing ? `<button type="button" class="btn out" data-act="cancel">Cancelar edição</button><button type="button" class="btn out" data-del="${p.id}">Excluir produto</button>` : ''}
+    </form></div>`;
+}
+
+document.addEventListener('submit', async e => {
+  e.preventDefault();
+  if(e.target.id === 'login'){
+    token = $('#pw').value;
+    try{ orders = await call('/orders'); sessionStorage.setItem('barbi_admin', token); timer = setInterval(() => tab === 'pedidos' && load(), 15000); render(); }
+    catch(err){ loginErr = err.message; token = ''; render(); }
+  }else if(e.target.id === 'pform'){
+    const f = new FormData(e.target);
+    const price = Math.round(parseFloat(String(f.get('price')).replace(',', '.')) * 100);
+    const body = JSON.stringify({category:f.get('category'), name:f.get('name'), description:f.get('description'), price,
+      emoji:f.get('emoji'), image_url:f.get('image_url'), sort:f.get('sort'), active:f.get('active') === 'on'});
+    try{ await call(editing ? '/products/' + editing : '/products', {method:editing ? 'PUT' : 'POST', body}); editing = null; await load(); }
+    catch(err){ alert(err.message); }
+  }
+});
+document.addEventListener('click', async e => {
+  const t = e.target.closest('button'); if(!t) return;
+  try{
+    if(t.dataset.tab){ tab = t.dataset.tab; editing = null; await load(); }
+    else if(t.dataset.act === 'out') logout();
+    else if(t.dataset.act === 'cancel'){ editing = null; render(); }
+    else if(t.dataset.edit){ editing = +t.dataset.edit; render(); }
+    else if(t.dataset.del && confirm('Excluir este produto? Pedidos antigos continuam guardados.')){ await call('/products/' + t.dataset.del, {method:'DELETE'}); editing = null; await load(); }
+    else if(t.dataset.st){
+      const [id, status] = t.dataset.st.split(':');
+      if(status === 'cancelado' && !confirm('Cancelar o pedido #' + id + '?')) return;
+      await call(`/orders/${id}/status`, {method:'PATCH', body:JSON.stringify({status})}); await load();
+    }
+  }catch(err){ alert(err.message); }
+});
+
+if(token){ timer = setInterval(() => tab === 'pedidos' && load(), 15000); load(); } else render();
+</script>
+</body>
+</html>
